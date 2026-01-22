@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emmre's GradPath Planner</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #1e1e24;
+            --bg-panel: #2b2b36;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent: #6c5ce7;
+            --accent-hover: #5649c0;
+            --major: #ff7675;
+            --minor: #74b9ff;
+            --diff-easy: #00b894;
+            --diff-med: #fdcb6e;
+            --diff-hard: #d63031;
+            --completed: #55efc4; /* Light Green */
+            --locked: #636e72;
+            --available: #dfe6e9;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--bg-panel);
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #444;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; color: var(--accent); letter-spacing: 1px; }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover { background-color: var(--accent-hover); }
+        button:disabled { background-color: var(--locked); cursor: not-allowed; }
+
+        button.secondary { background-color: transparent; border: 1px solid var(--accent); color: var(--accent); }
+        button.secondary:hover { background-color: rgba(108, 92, 231, 0.1); }
+
+        button.success { background-color: var(--completed); color: #2d3436; }
+        button.success:hover { background-color: #00b894; }
+
+        /* --- Setup Screen --- */
+        #setup-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 1.5rem;
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+            background: var(--bg-panel);
+            padding: 1.5rem;
+            border-radius: 8px;
+            width: 400px;
+        }
+
+        select, input[type="file"] {
+            width: 100%;
+            padding: 0.5rem;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+
+        /* --- Main Planner UI --- */
+        #planner-ui {
+            display: none; /* Hidden until started */
+            flex: 1;
+            overflow: hidden;
+            flex-direction: row;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 320px;
+            background: var(--bg-panel);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border-right: 1px solid #444;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .control-panel {
+            background: #333;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .legend { font-size: 0.8rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        /* Main Canvas */
+        main {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .section-title { 
+            margin-top: 0; 
+            margin-bottom: 1rem; 
+            border-bottom: 1px solid #555; 
+            padding-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Curriculum Grid */
+        .curriculum-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            padding-bottom: 4rem;
+        }
+
+        .term-container {
+            background: #25252e;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 0.8rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .term-header { font-weight: bold; margin-bottom: 0.5rem; color: var(--text-muted); display: flex; justify-content: space-between; font-size: 0.9rem;}
+
+        /* Subject Card */
+        .subject-card {
+            background: var(--bg-panel);
+            border-left: 4px solid var(--locked);
+            padding: 0.6rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s;
+            position: relative;
+        }
+
+        .subject-card:hover { transform: translateX(3px); box-shadow: 2px 2px 8px rgba(0,0,0,0.2); }
+
+        .subject-card.completed { 
+            border-left-color: var(--completed); 
+            background: rgba(85, 239, 196, 0.1); 
+        }
+        
+        /* New: Unlocked but not selected state logic handles via JS style, 
+           but CSS handles the locked interaction */
+        .subject-card.locked { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+        
+        .subject-card.selected { 
+            border: 2px solid var(--accent); 
+            background: rgba(108, 92, 231, 0.15);
+            /* Ensure selection overrides default border */
+            border-left: 4px solid var(--accent);
+        }
+
+        .sbj-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+        .sbj-code { font-weight: bold; font-size: 0.85rem; }
+        .sbj-type { font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; color: #fff; }
+        .type-major { background: var(--major); }
+        .type-minor { background: var(--minor); }
+
+        .sbj-title { font-size: 0.8rem; margin-bottom: 2px; line-height: 1.2; font-weight: 500;}
+        
+        .sbj-details { display: flex; gap: 10px; font-size: 0.7rem; color: var(--text-muted); }
+        .diff-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+        
+        /* --- Results Modal --- */
+        #results-modal, #about-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-panel);
+            width: 90%;
+            height: 90%;
+            border-radius: 8px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem; right: 1rem;
+            background: transparent;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+        }
+        .close-btn:hover { color: white; background: transparent; }
+
+        .results-stats {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            background: #333;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .stat-box h3 { margin: 0; font-size: 1.5rem; color: var(--completed); }
+        .stat-box p { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
+
+        #timeline-container {
+            overflow-y: auto;
+            flex: 1;
+            margin-top: 1rem;
+            background: #222; /* darker bg for contrast in image */
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        /* About Styles */
+        .about-details p { margin: 0.5rem 0; }
+        .link-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #444;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .link-btn:hover { background: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>GradPath Planner <span style="font-size:0.8rem; opacity:0.6;">by Emmre</span></h1>
+        <button class="secondary" onclick="toggleAbout()">About</button>
+    </header>
+
+    <section id="setup-screen">
+        <h2 style="color:var(--accent)">Let's Plan Your Graduation</h2>
+        
+        <div class="input-group">
+            <label>1. Select Program</label>
+            <select id="program-select">
+                <option value="BSEMC">Bachelor of Science in Entertainment and Multimedia Computing (Game Dev)</option>
+                <option value="UPLOAD">Upload Custom JSON...</option>
+            </select>
+            <input type="file" id="json-upload" accept=".json" style="display:none;">
+        </div>
+
+        <div class="input-group">
+            <label>2. Current Status</label>
+            <div style="display:flex; gap:1rem; width:100%">
+                <select id="start-year">
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                </select>
+                <select id="start-term">
+                    <option value="1">1st Term</option>
+                    <option value="2">2nd Term</option>
+                    <option value="3">3rd Term</option>
+                </select>
+            </div>
+        </div>
+
+        <button onclick="startPlanner()" style="width: 200px; padding: 1rem; font-size: 1.1rem;">Start Planning</button>
+    </section>
+
+    <section id="planner-ui">
+        <aside>
+            <div class="control-panel">
+                <h3>Controls</h3>
+                <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">
+                    <strong>Tip:</strong> You can click prerequisite subjects to instantly unlock the next ones without hitting record.
+                </p>
+
+                <p style="font-size: 0.8rem; color: #aaa;">Action 1: Mark Past Subjects</p>
+                <button onclick="markCompleted()" style="width:100%; margin-bottom: 0.5rem;" class="success">Mark Selected as Completed</button>
+                
+                <hr style="border-color:#444">
+                
+                <p style="font-size: 0.8rem; color: #aaa;">Action 2: Plan Next Term</p>
+                <button class="secondary" onclick="recordTerm()" style="width:100%; margin-bottom: 0.5rem;">Record Selected as Term</button>
+                <div id="recorded-list" style="font-size: 0.8rem; margin-top: 0.5rem; max-height: 150px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="control-panel" style="background: var(--bg-dark); border: 1px solid var(--accent); margin-top: auto;">
+                <button onclick="calculatePath()" style="width:100%; font-weight:bold;">VIEW TIMELINE</button>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item"><span class="dot" style="background:var(--completed)"></span> Completed</div>
+                <div class="legend-item"><span class="dot" style="background:var(--locked)"></span> Locked</div>
+                <div class="legend-item"><span class="dot" style="background:var(--accent)"></span> Selected</div>
+                <div class="legend-item"><span class="dot" style="background:var(--available)"></span> Available</div>
+            </div>
+        </aside>
+
+        <main>
+            <h2 class="section-title">
+                Official Curriculum Map
+                <span style="font-size:0.8rem; font-weight: normal; color: #aaa;">Click subjects to build your path</span>
+            </h2>
+            <div id="diagram-1" class="curriculum-grid">
+                </div>
+        </main>
+    </section>
+
+    <div id="results-modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="document.getElementById('results-modal').style.display='none'">&times;</button>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #555; padding-bottom:10px;">
+                <h2 style="margin:0;">Projected Graduation Timeline</h2>
+                <button class="secondary" onclick="saveDiagram()">Download as Image</button>
+            </div>
+            
+            <div class="results-stats" style="margin-top: 1rem;">
+                <div class="stat-box">
+                    <h3 id="res-grad-time">0 Years</h3>
+                    <p>Estimated Time</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="res-terms-rem">0</h3>
+                    <p>Terms Remaining</p>
+                </div>
+            </div>
+
+            <div id="timeline-container" class="curriculum-grid">
+                </div>
+        </div>
+    </div>
+
+    <div id="about-modal">
+        <div class="modal-content" style="height: auto; max-width: 500px; text-align: center;">
+            <button class="close-btn" onclick="toggleAbout()">&times;</button>
+            <h2 style="color:var(--accent)">About Emmre's GradPath Planner</h2>
+            <div class="about-details">
+                <p><strong>Description:</strong> An interactive, student-centered curriculum planner that enforces prerequisites and simulates graduation timelines.</p>
+                <p><strong>Version:</strong> 0.0.3</p>
+                <p><strong>Developer:</strong> Emmanuel (Emmre)</p>
+                
+                <div style="margin-top: 2rem;">
+                    <p>Made From:</p>
+                    <a href="https://www.facebook.com/profile.php?id=61577297810780" target="_blank" class="link-btn">AngCore Studio</a>
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <p>Support:</p>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=thelandfathers%40gmail.com" target="_blank" class="link-btn">thelandfathers@gmail.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Data: BSEMC Curriculum JSON ---
+        const BSEMC_DATA = {
+            "programName": "BSEMC - Game Development",
+            "terms": [
+                {
+                    "id": "1-1", "name": "1st Year - 1st Term",
+                    "subjects": [
+                        { "code": "CS100", "title": "Computer Programming I", "type": "Major", "diff": "Medium", "info": "Java basics, logic", "prereq": [] },
+                        { "code": "EMC101", "title": "Freehand & Digital Drawing", "type": "Major", "diff": "Medium", "info": "Photoshop, portfolio", "prereq": [] },
+                        { "code": "CS101", "title": "Intro to Computing", "type": "Major", "diff": "Easy", "info": "Productivity tools", "prereq": [] },
+                        { "code": "GE002", "title": "Math in Modern World", "type": "Minor", "diff": "Medium", "info": "Applied math", "prereq": [] },
+                        { "code": "IR001", "title": "Self Dev & Goal Setting", "type": "Minor", "diff": "Easy", "info": "Growth plan", "prereq": [] },
+                        { "code": "NTP001", "title": "Civic Welfare 1", "type": "Minor", "diff": "Easy", "info": "Community", "prereq": [] },
+                        { "code": "PE001", "title": "Physical Education 1", "type": "Minor", "diff": "Easy", "info": "Fitness", "prereq": [] }
+                    ]
+                },
+                {
+                    "id": "1-2", "name": "1st Year - 2nd Term",
+                    "subjects": [
+                        { "code": "CS105", "title": "Info Management", "type": "Major", "diff": "Medium", "info": "MySQL, DB design", "prereq": ["CS101"] },
+                        { "code": "CS104", "title": "Data Structures & Algo", "type": "Major", "diff": "Hard", "info": "Recursion, sorting", "prereq": ["CS100"] },
+                        { "code": "EMC106", "title": "Script Writing", "type": "Major", "diff": "Medium", "info": "Storyboarder", "prereq": ["EMC101"] },
+                        { "code": "GE001", "title": "Understanding the Self", "type": "Minor", "diff": "Easy", "info": "Reflection", "prereq": [] },
+                        { "code": "GE023", "title": "Ethics", "type": "Minor", "diff": "Medium", "info": "Ethical frameworks", "prereq": [] },
+                        { "code": "NTP002", "title": "Civic Welfare 2", "type": "Minor", "diff": "Easy", "info": "Service", "prereq": ["NTP001"] },
+                        { "code": "PE002", "title": "Physical Education 2", "type": "Minor", "diff": "Easy", "info": "Fitness", "prereq": ["PE001"] }
+                    ]
+                },
+                {
+                    "id": "1-3", "name": "1st Year - 3rd Term",
+                    "subjects": [
+                        { "code": "EMC201", "title": "Game Programming I", "type": "Major", "diff": "Medium", "info": "Unity, Basic 2D", "prereq": ["CS100"] },
+                        { "code": "EMC102", "title": "Intro to Game Design", "type": "Major", "diff": "Medium", "info": "Concepts", "prereq": [] },
+                        { "code": "EMC103", "title": "Game Management", "type": "Major", "diff": "Medium", "info": "Agile", "prereq": [] },
+                        { "code": "MAT008", "title": "Linear Algebra", "type": "Minor", "diff": "Medium", "info": "Vectors", "prereq": ["GE002"] },
+                        { "code": "MAT004", "title": "Intro to Calculus", "type": "Minor", "diff": "Hard", "info": "Derivatives", "prereq": ["MAT008"] },
+                        { "code": "GE004", "title": "Contemporary World", "type": "Minor", "diff": "Medium", "info": "Global issues", "prereq": [] },
+                        { "code": "PE003", "title": "Physical Education 3", "type": "Minor", "diff": "Easy", "info": "Fitness", "prereq": ["PE002"] }
+                    ]
+                },
+                {
+                    "id": "2-1", "name": "2nd Year - 1st Term",
+                    "subjects": [
+                        { "code": "EMC202", "title": "Game Programming II", "type": "Major", "diff": "Hard", "info": "Unity/Unreal 3D", "prereq": ["EMC201"] },
+                        { "code": "EMC104", "title": "Usability & HCI", "type": "Major", "diff": "Medium", "info": "UI/UX", "prereq": [] },
+                        { "code": "MA203", "title": "2D Animation", "type": "Major", "diff": "Medium", "info": "Animate", "prereq": ["EMC101"] },
+                        { "code": "EMC001", "title": "Elective (Data Eng)", "type": "Major", "diff": "Medium", "info": "SQL, Excel", "prereq": ["CS105"] },
+                        { "code": "GE022", "title": "Technopreneurship", "type": "Minor", "diff": "Medium", "info": "Business", "prereq": [] },
+                        { "code": "EMC005", "title": "Elective (Data Mining)", "type": "Major", "diff": "Hard", "info": "Python/R", "prereq": [] },
+                        { "code": "PE004", "title": "Physical Education 4", "type": "Minor", "diff": "Easy", "info": "Fitness", "prereq": ["PE003"] }
+                    ]
+                },
+                {
+                    "id": "2-2", "name": "2nd Year - 2nd Term",
+                    "subjects": [
+                        { "code": "EMC203", "title": "Game Programming III", "type": "Major", "diff": "Hard", "info": "Network/Photon", "prereq": ["EMC202"] },
+                        { "code": "EMC105", "title": "Audio Design", "type": "Major", "diff": "Medium", "info": "Soundtracks", "prereq": [] },
+                        { "code": "EMC107", "title": "Design Process", "type": "Major", "diff": "Medium", "info": "Prototype", "prereq": ["EMC102"] },
+                        { "code": "MA206", "title": "3D Modelling", "type": "Major", "diff": "Hard", "info": "Maya", "prereq": ["EMC101"] },
+                        { "code": "EMC006", "title": "Elective (Game Logic)", "type": "Major", "diff": "Medium", "info": "Logic", "prereq": [] },
+                        { "code": "GE005", "title": "Readings in PH History", "type": "Minor", "diff": "Medium", "info": "Analysis", "prereq": [] }
+                    ]
+                },
+                {
+                    "id": "2-3", "name": "2nd Year - 3rd Term",
+                    "subjects": [
+                        { "code": "MA209", "title": "3D Animation", "type": "Major", "diff": "Hard", "info": "Maya Anim", "prereq": ["MA203", "MA206"] },
+                         // Re-ordered slightly to fit flow
+                         { "code": "GE003", "title": "Science, Tech, Society", "type": "Minor", "diff": "Medium", "info": "STS Analysis", "prereq": [] }
+                    ]
+                },
+                {
+                    "id": "3-1", "name": "3rd Year - 1st Term",
+                    "subjects": [
+                         { "code": "EMC209", "title": "Applied Physics", "type": "Major", "diff": "Hard", "info": "Simulation", "prereq": ["CS100"] },
+                         { "code": "EMC204", "title": "Comp Graphics Prog", "type": "Major", "diff": "Hard", "info": "Shaders", "prereq": ["CS100"] },
+                         { "code": "EMC206", "title": "Capstone I", "type": "Major", "diff": "Medium", "info": "Proposal", "prereq": ["EMC107", "EMC203"] },
+                         { "code": "EMC002", "title": "Elective (Web)", "type": "Major", "diff": "Medium", "info": "PHP/Laravel", "prereq": [] },
+                         { "code": "MAT003", "title": "Prob & Stats", "type": "Minor", "diff": "Medium", "info": "Stats", "prereq": ["MAT004"] }
+                    ]
+                },
+                {
+                    "id": "3-2", "name": "3rd Year - 2nd Term",
+                    "subjects": [
+                        { "code": "EMC208", "title": "Adv Game Design", "type": "Major", "diff": "Hard", "info": "Economy", "prereq": ["EMC102"] },
+                        { "code": "EMC210", "title": "Capstone II", "type": "Major", "diff": "Hard", "info": "Final Project", "prereq": ["EMC206"] },
+                        { "code": "EMC003", "title": "Elective (QA)", "type": "Major", "diff": "Medium", "info": "Testing", "prereq": [] },
+                        { "code": "GE010", "title": "Methods of Research", "type": "Minor", "diff": "Medium", "info": "Documentation", "prereq": [] }
+                    ]
+                },
+                {
+                    "id": "4-1", "name": "4th Year - Internship",
+                    "subjects": [
+                        { "code": "EMC212", "title": "Practicum", "type": "Major", "diff": "Medium", "info": "400 Hours", "prereq": ["EMC210"] }
+                    ]
+                }
+            ]
+        };
+
+        // --- Application Logic ---
+        let currentProgram = null;
+        let completedSubjects = new Set();
+        let recordedTerms = [];
+        let selectedSubjects = new Set(); // Currently clicked but not yet processed
+
+        // --- Setup & Loading ---
+        
+        const fileInput = document.getElementById('json-upload');
+        const progSelect = document.getElementById('program-select');
+
+        progSelect.addEventListener('change', (e) => {
+            if(e.target.value === 'UPLOAD') {
+                fileInput.style.display = 'block';
+            } else {
+                fileInput.style.display = 'none';
+            }
+        });
+
+        function startPlanner() {
+            const selectedProg = progSelect.value;
+            
+            if (selectedProg === 'BSEMC') {
+                currentProgram = BSEMC_DATA;
+                initPlanner();
+            } else if (selectedProg === 'UPLOAD') {
+                const file = fileInput.files[0];
+                if (!file) { alert("Please upload a JSON file."); return; }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        currentProgram = JSON.parse(e.target.result);
+                        initPlanner();
+                    } catch (err) {
+                        alert("Invalid JSON file.");
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function initPlanner() {
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('planner-ui').style.display = 'flex';
+            renderDiagram1();
+        }
+
+        function getDifficultyColor(diff) {
+            switch(diff.toLowerCase()) {
+                case 'easy': return 'var(--diff-easy)';
+                case 'medium': return 'var(--diff-med)';
+                case 'hard': return 'var(--diff-hard)';
+                default: return '#fff';
+            }
+        }
+
+        // --- CORE LOGIC UPGRADE: Dynamic Unlocking ---
+        // Checks if a subject is unlocked based on Completed History OR Current Selection
+        function isSubjectLocked(subject) {
+            if (!subject.prereq || subject.prereq.length === 0) return false;
+            
+            // Collect all "Available" Prereqs from:
+            // 1. Permanently completed subjects
+            // 2. Subjects recorded in previous planning terms
+            // 3. Subjects CURRENTLY selected/clicked by the user in this session
+            const allAvailable = new Set([
+                ...completedSubjects,
+                ...selectedSubjects
+            ]);
+
+            // Add recorded subjects to availability
+            recordedTerms.forEach(term => {
+                term.subjects.forEach(code => allAvailable.add(code));
+            });
+
+            // Check if every prerequisite exists in that available pool
+            return !subject.prereq.every(p => allAvailable.has(p));
+        }
+
+        function toggleSubject(code, cardElement) {
+            // Can't toggle if already formally completed
+            if (completedSubjects.has(code)) return; 
+            
+            // Check if recorded in a future term (prevent unselecting if already planned)
+            let isRecorded = false;
+            recordedTerms.forEach(t => {
+                if(t.subjects.includes(code)) isRecorded = true;
+            });
+            if(isRecorded) return;
+
+            if (selectedSubjects.has(code)) {
+                selectedSubjects.delete(code);
+                cardElement.classList.remove('selected');
+            } else {
+                selectedSubjects.add(code);
+                cardElement.classList.add('selected');
+            }
+
+            // CRITICAL: Re-render the diagram immediately to update locks based on new selection
+            renderDiagram1(); 
+        }
+
+        // --- Diagram 1: The Interactive Curriculum ---
+        function renderDiagram1() {
+            const grid = document.getElementById('diagram-1');
+            // Store scroll position if re-rendering
+            const scrollPos = document.querySelector('main').scrollTop;
+            
+            grid.innerHTML = '';
+
+            currentProgram.terms.forEach((term, index) => {
+                const termDiv = document.createElement('div');
+                termDiv.className = 'term-container';
+                
+                termDiv.innerHTML = `<div class="term-header"><span>${term.name}</span> <span style="font-size:0.8rem">${term.subjects.length} Subj</span></div>`;
+
+                term.subjects.forEach(sub => {
+                    const locked = isSubjectLocked(sub);
+                    const completed = completedSubjects.has(sub.code);
+                    const selected = selectedSubjects.has(sub.code);
+
+                    // Check if this subject is in a RECORDED plan
+                    let recordColor = null;
+                    recordedTerms.forEach(rt => {
+                        if(rt.subjects.includes(sub.code)) recordColor = rt.color;
+                    });
+
+                    const card = document.createElement('div');
+                    let classes = 'subject-card';
+                    if (completed) classes += ' completed';
+                    else if (selected) classes += ' selected';
+                    else if (locked) classes += ' locked';
+                    
+                    card.className = classes;
+                    
+                    if(recordColor) {
+                        card.style.borderLeftColor = recordColor;
+                        card.style.background = `linear-gradient(90deg, ${recordColor}22 0%, var(--bg-panel) 100%)`;
+                    }
+
+                    // On Click
+                    card.onclick = () => {
+                        // Allow clicking if it's unlocked OR if it's already selected (to deselect)
+                        if((!locked || selected) && !completed) {
+                            toggleSubject(sub.code, card);
+                        }
+                    };
+
+                    // Content
+                    card.innerHTML = `
+                        <div class="sbj-top">
+                            <span class="sbj-code">${sub.code}</span>
+                            <span class="sbj-type ${sub.type === 'Major' ? 'type-major' : 'type-minor'}">${sub.type}</span>
+                        </div>
+                        <div class="sbj-title">${sub.title}</div>
+                        <div class="sbj-details">
+                            <span><span class="diff-dot" style="background:${getDifficultyColor(sub.diff)}"></span>${sub.diff}</span>
+                        </div>
+                        <div style="font-size:0.7rem; color:#666; margin-top:4px;">${sub.info}</div>
+                    `;
+                    termDiv.appendChild(card);
+                });
+
+                grid.appendChild(termDiv);
+            });
+            
+            // Restore scroll
+            // document.querySelector('main').scrollTop = scrollPos;
+        }
+
+        // --- Controls ---
+
+        function markCompleted() {
+            if(selectedSubjects.size === 0) return;
+            selectedSubjects.forEach(code => completedSubjects.add(code));
+            selectedSubjects.clear();
+            renderDiagram1(); 
+        }
+
+        function recordTerm() {
+            if(selectedSubjects.size === 0) {
+                alert("Please select subjects to record for this term.");
+                return;
+            }
+
+            // Generate Random Color for this "Batch"
+            const colors = ['#e84393', '#0984e3', '#00b894', '#fdcb6e', '#d63031', '#6c5ce7'];
+            const color = colors[recordedTerms.length % colors.length];
+
+            const termName = `Recorded Term ${recordedTerms.length + 1}`;
+            
+            // Store Record
+            recordedTerms.push({
+                name: termName,
+                color: color,
+                subjects: Array.from(selectedSubjects)
+            });
+
+            // Update UI list
+            const list = document.getElementById('recorded-list');
+            const item = document.createElement('div');
+            item.style.color = color;
+            item.style.marginBottom = "4px";
+            item.innerHTML = `<strong>${termName}</strong>: ${selectedSubjects.size} Subjects`;
+            list.appendChild(item);
+
+            selectedSubjects.clear();
+            renderDiagram1();
+        }
+
+        // --- Calculation & Diagram 2 ---
+
+        function calculatePath() {
+            const modal = document.getElementById('results-modal');
+            modal.style.display = 'flex';
+
+            // 1. Calculate Time
+            let allSubjects = [];
+            currentProgram.terms.forEach(t => allSubjects = allSubjects.concat(t.subjects));
+            
+            let completedCount = completedSubjects.size;
+            let recordedCount = 0;
+            recordedTerms.forEach(t => recordedCount += t.subjects.length);
+            
+            let totalSubjects = allSubjects.length;
+            let remaining = totalSubjects - completedCount - recordedCount;
+            
+            // Estimate remaining terms for un-recorded subjects (assume load of 6)
+            let estimatedFutureTerms = Math.ceil(remaining / 6);
+            let totalFutureTerms = recordedTerms.length + estimatedFutureTerms;
+
+            // Display Stats
+            document.getElementById('res-terms-rem').innerText = totalFutureTerms;
+            
+            let totalMonths = totalFutureTerms * 4; // Approx 4 months per term
+            let years = Math.floor(totalMonths / 12);
+            let months = totalMonths % 12;
+            document.getElementById('res-grad-time').innerText = `${years} Yrs, ${months} Mos`;
+
+
+            // 2. Render Timeline (Diagram 2)
+            const d2 = document.getElementById('timeline-container');
+            d2.innerHTML = '';
+
+            // A. Show "Past/Completed" block
+            if(completedSubjects.size > 0) {
+                const pastDiv = document.createElement('div');
+                pastDiv.className = 'term-container';
+                pastDiv.style.opacity = '0.7';
+                pastDiv.innerHTML = `<div class="term-header">Completed History</div>`;
+                
+                allSubjects.filter(s => completedSubjects.has(s.code)).forEach(sub => {
+                    const card = createSimpleCard(sub, 'var(--completed)');
+                    pastDiv.appendChild(card);
+                });
+                d2.appendChild(pastDiv);
+            }
+
+            // B. Show Recorded Terms
+            recordedTerms.forEach(rt => {
+                const termDiv = document.createElement('div');
+                termDiv.className = 'term-container';
+                termDiv.style.borderTop = `3px solid ${rt.color}`;
+                termDiv.innerHTML = `<div class="term-header" style="color:${rt.color}">${rt.name}</div>`;
+
+                rt.subjects.forEach(code => {
+                    const sub = allSubjects.find(s => s.code === code);
+                    if(sub) {
+                        termDiv.appendChild(createSimpleCard(sub, '#fff'));
+                    }
+                });
+                d2.appendChild(termDiv);
+            });
+
+            // C. Show Remaining
+            if (remaining > 0) {
+                const remDiv = document.createElement('div');
+                remDiv.className = 'term-container';
+                remDiv.innerHTML = `<div class="term-header">Remaining / Unscheduled</div>`;
+                
+                allSubjects.forEach(sub => {
+                    // If not completed AND not in any recorded term
+                    let isPlanned = false;
+                    recordedTerms.forEach(rt => { if(rt.subjects.includes(sub.code)) isPlanned = true; });
+                    
+                    if(!completedSubjects.has(sub.code) && !isPlanned) {
+                        remDiv.appendChild(createSimpleCard(sub, 'var(--text-muted)'));
+                    }
+                });
+                d2.appendChild(remDiv);
+            }
+        }
+
+        function createSimpleCard(sub, colorOverride) {
+            const card = document.createElement('div');
+            card.className = 'subject-card';
+            card.style.borderLeftColor = colorOverride || 'gray';
+            card.style.padding = "0.5rem";
+            card.innerHTML = `<span class="sbj-code">${sub.code}</span> <span style="font-size:0.8rem">${sub.title}</span>`;
+            return card;
+        }
+
+        // --- Export to Image Functionality ---
+        function saveDiagram() {
+            const element = document.getElementById("timeline-container");
+            const btn = document.querySelector("#results-modal .secondary");
+            
+            btn.innerText = "Generating...";
+            btn.disabled = true;
+
+            // FIX: To handle the scrolling cutoff issue with html2canvas
+            // 1. Create a clone of the target element
+            // 2. Style the clone to have full height (no scrollbar) and position it off-screen
+            // 3. Capture the clone, then delete it.
+            
+            const clone = element.cloneNode(true);
+            
+            // Force the clone to expand fully to fit all content
+            clone.style.height = "auto";
+            clone.style.maxHeight = "none";
+            clone.style.overflow = "visible";
+            clone.style.position = "absolute";
+            clone.style.top = "-10000px";
+            clone.style.left = "0";
+            clone.style.width = element.offsetWidth + "px"; // Maintain width
+            
+            document.body.appendChild(clone);
+
+            html2canvas(clone, {
+                scale: 2, // High resolution
+                backgroundColor: "#1e1e24",
+                scrollY: -window.scrollY
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'My_Graduation_Timeline.png';
+                link.href = canvas.toDataURL();
+                link.click();
+                
+                // Cleanup
+                document.body.removeChild(clone);
+                btn.innerText = "Download as Image";
+                btn.disabled = false;
+            }).catch(err => {
+                alert("Error saving image.");
+                console.error(err);
+                
+                // Cleanup
+                document.body.removeChild(clone);
+                btn.innerText = "Download as Image";
+                btn.disabled = false;
+            });
+        }
+
+        // About Modal
+        function toggleAbout() {
+            const m = document.getElementById('about-modal');
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+    </script>
+</body>
+</html>

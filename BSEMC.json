@@ -1,0 +1,421 @@
+{
+  "programName": "BSEMC - Game Development",
+  "terms": [
+    {
+      "id": "1-1",
+      "name": "1st Year - 1st Term",
+      "subjects": [
+        {
+          "code": "CS100",
+          "title": "Computer Programming I",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Java basics, logic, simple com",
+          "prereq": []
+        },
+        {
+          "code": "EMC101",
+          "title": "Freehand and Digital Drawing",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Photoshop, drawing portfolio",
+          "prereq": []
+        },
+        {
+          "code": "CS101",
+          "title": "Introduction to Computing",
+          "type": "Major",
+          "diff": "Easy",
+          "info": "Productivity tools, student we",
+          "prereq": []
+        },
+        {
+          "code": "GE002",
+          "title": "Mathematics in the Modern Worl",
+          "type": "Minor",
+          "diff": "Medium",
+          "info": "Applied math concepts",
+          "prereq": []
+        },
+        {
+          "code": "IR001",
+          "title": "Self Development and Goal Sett",
+          "type": "Minor",
+          "diff": "Easy",
+          "info": "Personal growth plan",
+          "prereq": []
+        },
+        {
+          "code": "NTP001",
+          "title": "Civic Welfare 1",
+          "type": "Minor",
+          "diff": "Easy",
+          "info": "Community engagement",
+          "prereq": []
+        },
+        {
+          "code": "PE001",
+          "title": "Physical Education 1",
+          "type": "Minor",
+          "diff": "Easy",
+          "info": "Physical fitness",
+          "prereq": []
+        }
+      ]
+    },
+    {
+      "id": "1-2",
+      "name": "1st Year - 2nd Term",
+      "subjects": [
+        {
+          "code": "CS105",
+          "title": "Information Management",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "MySQL, relational DB design",
+          "prereq": ["CS101"]
+        },
+        {
+          "code": "CS104",
+          "title": "Data Structures and Algorithms",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Java, recursion, sorting, algo",
+          "prereq": ["CS100"]
+        },
+        {
+          "code": "EMC106",
+          "title": "Script Writing and Storyboardi",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Storyboarder, short film proje",
+          "prereq": ["EMC101"]
+        },
+        {
+          "code": "GE001",
+          "title": "Understanding the Self",
+          "type": "Minor",
+          "diff": "Easy",
+          "info": "Self-awareness and reflection",
+          "prereq": []
+        },
+        {
+          "code": "GE023",
+          "title": "Ethics",
+          "type": "Minor",
+          "diff": "Medium",
+          "info": "Field trip, ethical frameworks",
+          "prereq": []
+        },
+        {
+          "code": "NTP002",
+          "title": "Civic Welfare 2",
+          "type": "Minor",
+          "diff": "Easy",
+          "info": "Community service continuation",
+          "prereq": ["NTP001"]
+        },
+        {
+          "code": "PE002",
+          "title": "Physical Education 2",
+          "type": "Minor",
+          "diff": "Easy",
+          "info": "Physical fitness",
+          "prereq": ["PE001"]
+        }
+      ]
+    },
+    {
+      "id": "1-3",
+      "name": "1st Year - 3rd Term",
+      "subjects": [
+        {
+          "code": "EMC201",
+          "title": "Game Programming I",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Unity, basic 2D game",
+          "prereq": ["CS100"]
+        },
+        {
+          "code": "EMC102",
+          "title": "Intro to Game Design and Devel",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Unity, game concept and design",
+          "prereq": []
+        },
+        {
+          "code": "EMC103",
+          "title": "Game Management",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Unity, basic 2D game",
+          "prereq": []
+        },
+        {
+          "code": "MAT008",
+          "title": "Linear Algebra",
+          "type": "Minor",
+          "diff": "Medium",
+          "info": "Matrix operations, vector math",
+          "prereq": ["GE002"]
+        },
+        {
+          "code": "MAT004",
+          "title": "Introduction to Calculus",
+          "type": "Minor",
+          "diff": "Hard",
+          "info": "Limits, derivatives",
+          "prereq": ["MAT008"]
+        },
+        {
+          "code": "GE004",
+          "title": "Contemporary World",
+          "type": "Minor",
+          "diff": "Medium",
+          "info": "Global issues and perspectives",
+          "prereq": []
+        },
+        {
+          "code": "PE003",
+          "title": "Physical Education 3",
+          "type": "Minor",
+          "diff": "Easy",
+          "info": "Physical fitness",
+          "prereq": ["PE002"]
+        }
+      ]
+    },
+    {
+      "id": "2-1",
+      "name": "2nd Year - 1st Term",
+      "subjects": [
+        {
+          "code": "EMC202",
+          "title": "Game Programming II",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Unity/Unreal, basic 3D game",
+          "prereq": ["EMC201"]
+        },
+        {
+          "code": "EMC104",
+          "title": "Usability, HCI, and Accessibil",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Ul design, accessibility testi",
+          "prereq": []
+        },
+        {
+          "code": "MA203",
+          "title": "2D Animation",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Adobe Animate, 2D animation",
+          "prereq": ["EMC101"]
+        },
+        {
+          "code": "EMC001",
+          "title": "EMC Elective (Data Engineering",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "SQL, Excel, database case",
+          "prereq": ["CS105"]
+        },
+        {
+          "code": "GE022",
+          "title": "Technopreneurship",
+          "type": "Minor",
+          "diff": "Medium",
+          "info": "Business proposal",
+          "prereq": []
+        },
+        {
+          "code": "EMC005",
+          "title": "EMC Elective (Data Mining)",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Python/R/Weka, business data",
+          "prereq": []
+        },
+        {
+          "code": "PE004",
+          "title": "Physical Education 4",
+          "type": "Minor",
+          "diff": "Easy",
+          "info": "Physical fitness",
+          "prereq": ["PE003"]
+        }
+      ]
+    },
+    {
+      "id": "2-2",
+      "name": "2nd Year - 2nd Term",
+      "subjects": [
+        {
+          "code": "EMC203",
+          "title": "Game Programming III",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Unity/Unreal/Photon, network-b",
+          "prereq": ["EMC202"]
+        },
+        {
+          "code": "EMC105",
+          "title": "Audio Design and Sound Enginee",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Mixed soundtrack, audio editin",
+          "prereq": []
+        },
+        {
+          "code": "EMC107",
+          "title": "Design and Production Process",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Playable prototype, video game",
+          "prereq": ["EMC102"]
+        },
+        {
+          "code": "MA209",
+          "title": "3D Animation",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Maya, 3D animation",
+          "prereq": ["MA203", "MA206"]
+        },
+        {
+          "code": "MA206",
+          "title": "3D Modelling",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Maya, 3D character model",
+          "prereq": ["EMC101"]
+        },
+        {
+          "code": "EMC006",
+          "title": "EMC Elective (Game Design Prog",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Unity, game logic",
+          "prereq": []
+        },
+        {
+          "code": "GE005",
+          "title": "Readings in Philippine History",
+          "type": "Minor",
+          "diff": "Medium",
+          "info": "Field trip, historical analysi",
+          "prereq": []
+        }
+      ]
+    },
+    {
+      "id": "3-1",
+      "name": "3rd Year - 1st Term",
+      "subjects": [
+        {
+          "code": "EMC209",
+          "title": "Applied Game Physics",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Unity/Unreal, physics simulati",
+          "prereq": ["CS100"]
+        },
+        {
+          "code": "EMC204",
+          "title": "Computer Graphics Programming",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Shader code, 3D video game",
+          "prereq": ["CS100"]
+        },
+        {
+          "code": "EMC206",
+          "title": "Capstone I",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "Game proposal, adviser panel",
+          "prereq": ["EMC107", "EMC203"]
+        },
+        {
+          "code": "EMC002",
+          "title": "EMC Elective (Web Programming)",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "PHP/Laravel, dynamic website",
+          "prereq": []
+        },
+        {
+          "code": "MAT003",
+          "title": "Probability and Statistics",
+          "type": "Minor",
+          "diff": "Medium",
+          "info": "Statistical analysis",
+          "prereq": ["MAT004"]
+        }
+      ]
+    },
+    {
+      "id": "3-2",
+      "name": "3rd Year - 2nd Term",
+      "subjects": [
+        {
+          "code": "EMC208",
+          "title": "Advanced Game Design",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Game economy, professional pit",
+          "prereq": ["EMC102"]
+        },
+        {
+          "code": "EMC210",
+          "title": "Capstone II",
+          "type": "Major",
+          "diff": "Hard",
+          "info": "Final project, exhibit, critiq",
+          "prereq": ["EMC206"]
+        },
+        {
+          "code": "EMC003",
+          "title": "EMC Elective (Software QA)",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "QA report, documented process",
+          "prereq": []
+        },
+        {
+          "code": "GE010",
+          "title": "Methods of Research",
+          "type": "Minor",
+          "diff": "Medium",
+          "info": "Research methods and docume",
+          "prereq": []
+        },
+        {
+          "code": "GE003",
+          "title": "Science, Technology and Societ",
+          "type": "Minor",
+          "diff": "Medium",
+          "info": "Field trip, STS analysis",
+          "prereq": []
+        }
+      ]
+    },
+    {
+      "id": "4-1",
+      "name": "4th Year - Internship",
+      "subjects": [
+        {
+          "code": "EMC212",
+          "title": "Practicum",
+          "type": "Major",
+          "diff": "Medium",
+          "info": "400 hours of internship",
+          "prereq": ["EMC210"]
+        }
+      ]
+    }
+  ]
+}
