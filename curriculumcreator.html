@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emmre's Curriculum Creator</title>
+    <style>
+        /* --- Shared Theme from Index.html --- */
+        :root {
+            --bg-dark: #1e1e24;
+            --bg-panel: #2b2b36;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent: #6c5ce7;
+            --accent-hover: #5649c0;
+            --major: #ff7675;
+            --minor: #74b9ff;
+            --diff-easy: #00b894;
+            --diff-med: #fdcb6e;
+            --diff-hard: #d63031;
+            --completed: #55efc4;
+            --locked: #636e72;
+            --available: #dfe6e9;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--bg-panel);
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #444;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; color: var(--accent); letter-spacing: 1px; }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover { background-color: var(--accent-hover); }
+        button.secondary { background-color: transparent; border: 1px solid var(--accent); color: var(--accent); }
+        button.secondary:hover { background-color: rgba(108, 92, 231, 0.1); }
+        button.danger { background-color: var(--diff-hard); color: white; border: none; }
+        button.danger:hover { background-color: #c0392b; }
+
+        /* --- Setup Screen --- */
+        #setup-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 1.5rem;
+            text-align: center;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+            background: var(--bg-panel);
+            padding: 1.5rem;
+            border-radius: 8px;
+            width: 400px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        label { font-size: 0.9rem; color: var(--text-muted); }
+
+        select, input[type="text"], input[type="number"], input[type="file"], textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        /* --- Editor UI --- */
+        #editor-ui {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #year-tabs {
+            background: var(--bg-panel);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #444;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        #year-select {
+            padding: 0.5rem;
+            width: 200px;
+        }
+
+        #terms-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        /* Term Card styling matching Index.html */
+        .term-container {
+            background: #25252e;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 150px;
+        }
+
+        .term-header { 
+            font-weight: bold; 
+            margin-bottom: 1rem; 
+            color: var(--text-muted); 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 1rem;
+            border-bottom: 1px solid #444;
+            padding-bottom: 0.5rem;
+        }
+
+        /* Existing Subject Card Style */
+        .subject-card {
+            background: var(--bg-panel);
+            border-left: 4px solid var(--accent);
+            padding: 0.6rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            position: relative;
+            cursor: default;
+        }
+
+        .sbj-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+        .sbj-code { font-weight: bold; font-size: 0.85rem; }
+        .sbj-type { font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; color: #fff; }
+        .type-major { background: var(--major); }
+        .type-minor { background: var(--minor); }
+        .sbj-title { font-size: 0.8rem; margin-bottom: 2px; line-height: 1.2; font-weight: 500;}
+        .sbj-details { display: flex; gap: 10px; font-size: 0.7rem; color: var(--text-muted); }
+        .diff-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+        .delete-sbj {
+            position: absolute;
+            top: 5px; right: 5px;
+            color: #ff7675;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            display: none;
+        }
+        .subject-card:hover .delete-sbj { display: block; }
+
+        /* Add Button (+ Card) */
+        .add-card-btn {
+            border: 2px dashed #555;
+            background: transparent;
+            color: #777;
+            padding: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 1.5rem;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+        }
+        .add-card-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(108, 92, 231, 0.05); }
+
+        /* Bottom Action Bar */
+        #action-bar {
+            background: var(--bg-panel);
+            padding: 1rem;
+            border-top: 2px solid #444;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* --- Modals --- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-panel);
+            width: 500px;
+            max-height: 90vh;
+            border-radius: 8px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            overflow-y: auto;
+            gap: 1rem;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem; right: 1rem;
+            background: transparent;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            border: none;
+        }
+        .close-btn:hover { color: white; }
+
+        /* Prerequisite Selector Grid */
+        #prereq-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #222;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+
+        .prereq-item {
+            background: #333;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .prereq-item:hover { background: #444; }
+        .prereq-item.selected { 
+            background: rgba(108, 92, 231, 0.3); 
+            border: 1px solid var(--accent); 
+        }
+        .order-badge {
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* About Styles */
+        .about-details p { margin: 0.5rem 0; }
+        .link-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #444;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        .link-btn:hover { background: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Curriculum Creator <span style="font-size:0.8rem; opacity:0.6;">by Emmre</span></h1>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="secondary" onclick="window.location.href='index.html'">GradPath Planner</button>
+            <button class="secondary" onclick="returnToStart()">Create New</button>
+            <button class="secondary" onclick="toggleAbout()">About</button>
+        </div>
+    </header>
+
+    <section id="setup-screen">
+        <h2 style="color:var(--accent)">Create New Curriculum</h2>
+        
+        <div class="input-group">
+            <button class="secondary" style="width:100%" onclick="document.getElementById('file-upload').click()">Upload Custom Program JSON</button>
+            <input type="file" id="file-upload" accept=".json" style="display:none" onchange="handleFileUpload(this)">
+            
+            <div id="file-status" style="display:none; width: 100%; text-align: center; margin-top: 0.5rem;">
+                <p style="margin: 0.5rem 0; color: var(--completed);">File Loaded!</p>
+                <button class="danger" style="font-size: 0.8rem; padding: 0.3rem 0.6rem;" onclick="resetSetup()">Reset / Create New</button>
+            </div>
+            
+            <small id="upload-hint" style="color:#aaa; text-align:center; width:100%">Modify an existing file</small>
+        </div>
+
+        <div style="width: 100%; border-bottom: 1px solid #444; margin: 1rem 0;"></div>
+
+        <div id="manual-setup-group" class="input-group">
+            <label>Program Name</label>
+            <input type="text" id="prog-name" placeholder="e.g. BS Computer Science">
+            
+            <label>Type of Semester</label>
+            <select id="sem-type">
+                <option value="1">Annual System (1 Term/Year)</option>
+                <option value="2">Semester System (2 Terms/Year)</option>
+                <option value="3" selected>Trimester System (3 Terms/Year)</option>
+                <option value="4">Quarter System (4 Terms/Year)</option>
+            </select>
+
+            <label>Number of Years</label>
+            <input type="number" id="prog-years" value="4" min="1" max="6">
+        </div>
+
+        <button onclick="initializeCreator()" style="width: 200px; padding: 1rem; font-size: 1.1rem; margin-top: 1rem;">Create</button>
+    </section>
+
+    <section id="editor-ui">
+        <div id="year-tabs">
+            <label style="margin:0; font-weight:bold; color:var(--accent);">Editing Year:</label>
+            <select id="year-select" onchange="renderCurrentYear()">
+                </select>
+        </div>
+
+        <div id="terms-container">
+            </div>
+
+        <div id="action-bar">
+            <button onclick="downloadJSON()" style="width: 300px; padding: 1rem; font-size: 1.1rem;">Create as Program (.json)</button>
+        </div>
+    </section>
+
+    <div id="add-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('add-modal')">&times;</button>
+            <h2>Add Subject</h2>
+            
+            <input type="hidden" id="current-term-id">
+
+            <label>Subject Code</label>
+            <input type="text" id="new-code" placeholder="e.g. CS101">
+
+            <label>Subject Name</label>
+            <input type="text" id="new-title" placeholder="e.g. Introduction to Computing">
+
+            <div style="display:flex; gap:1rem;">
+                <div style="flex:1">
+                    <label>Type</label>
+                    <select id="new-type">
+                        <option value="Major">Major</option>
+                        <option value="Minor">Minor</option>
+                    </select>
+                </div>
+                <div style="flex:1">
+                    <label>Difficulty</label>
+                    <select id="new-diff">
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Information / Description</label>
+            <input type="text" id="new-info" placeholder="Short description...">
+
+            <label>Prerequisites</label>
+            <button class="secondary" onclick="openPrereqModal()" style="width:100%; text-align:left; justify-content:space-between; display:flex;">
+                <span>Select Prerequisites...</span>
+                <span id="prereq-count">0 Selected</span>
+            </button>
+            <div id="selected-prereq-display" style="font-size:0.8rem; color:var(--accent); margin-top:5px;"></div>
+
+            <button onclick="saveSubject()" style="margin-top:1rem;">Add Subject</button>
+        </div>
+    </div>
+
+    <div id="prereq-modal" class="modal" style="z-index: 101;">
+        <div class="modal-content" style="width: 600px;">
+            <button class="close-btn" onclick="closeModal('prereq-modal')">&times;</button>
+            <h3>Select Prerequisites</h3>
+            <p style="font-size:0.8rem; color:#aaa; margin-top:0;">Click subjects to select. The numbers indicate the order of dependency (Hierarchy).</p>
+            
+            <div id="prereq-list">
+                </div>
+
+            <button onclick="closeModal('prereq-modal')">Done Selecting</button>
+        </div>
+    </div>
+
+    <div id="about-modal" class="modal">
+        <div class="modal-content" style="height: auto; max-width: 500px; text-align: center;">
+            <button class="close-btn" onclick="toggleAbout()">&times;</button>
+            <h2 style="color:var(--accent)">About Curriculum Creator</h2>
+            <div class="about-details">
+                <p><strong>Description:</strong> A tool that creates .json files compatible with the GradPath Planner. Design your own curriculum path.</p>
+                <p><strong>Developer:</strong> Emmanuel (Emmre)</p>
+                
+                <div style="margin-top: 2rem;">
+                    <p>Made From:</p>
+                    <a href="https://www.facebook.com/profile.php?id=61577297810780" target="_blank" class="link-btn">AngCore Studio</a>
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <p>Support:</p>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=thelandfathers%40gmail.com" target="_blank" class="link-btn">thelandfathers@gmail.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let curriculum = {
+            programName: "",
+            terms: [] 
+        };
+        
+        // Metadata for UI generation
+        let config = {
+            years: 4,
+            termsPerYear: 3
+        };
+
+        let tempPrereqs = []; 
+
+        // --- Initialization ---
+
+        function initializeCreator() {
+            const name = document.getElementById('prog-name').value;
+            const tpy = parseInt(document.getElementById('sem-type').value);
+            const yrs = parseInt(document.getElementById('prog-years').value);
+
+            if(!name) { alert("Please enter a Program Name"); return; }
+
+            curriculum.programName = name;
+            config.years = yrs;
+            config.termsPerYear = tpy;
+
+            // Generate empty terms structure if creating from scratch
+            if(curriculum.terms.length === 0) {
+                generateEmptyStructure();
+            }
+
+            // Switch UI
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('editor-ui').style.display = 'flex';
+            
+            setupYearSelect();
+            renderCurrentYear();
+        }
+
+        function generateEmptyStructure() {
+            curriculum.terms = [];
+            for(let y=1; y<=config.years; y++) {
+                for(let t=1; t<=config.termsPerYear; t++) {
+                    let suffix = "th";
+                    if(t===1) suffix="st"; else if(t===2) suffix="nd"; else if(t===3) suffix="rd";
+                    
+                    curriculum.terms.push({
+                        id: `${y}-${t}`,
+                        name: `${y} Year - ${t}${suffix} Term`, 
+                        subjects: []
+                    });
+                }
+            }
+        }
+
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    
+                    // Populate basic fields (kept for reference, though hidden)
+                    document.getElementById('prog-name').value = json.programName;
+                    
+                    let maxYear = 1;
+                    let maxTerm = 1;
+                    json.terms.forEach(term => {
+                        const parts = term.id.split('-');
+                        const y = parseInt(parts[0]);
+                        const t = parseInt(parts[1]);
+                        if(y > maxYear) maxYear = y;
+                        if(t > maxTerm) maxTerm = t;
+                    });
+
+                    document.getElementById('prog-years').value = maxYear;
+                    document.getElementById('sem-type').value = maxTerm;
+
+                    // Set state
+                    curriculum = json;
+                    
+                    // UI Update: Hide Manual Inputs, Show Reset Button
+                    document.getElementById('manual-setup-group').style.display = 'none';
+                    document.getElementById('file-status').style.display = 'block';
+                    document.getElementById('upload-hint').style.display = 'none';
+                    
+                } catch(err) {
+                    alert("Invalid JSON file.");
+                    console.error(err);
+                    input.value = ''; // Reset input
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Logic for returning to start from Header
+        function returnToStart() {
+            if(confirm("Are you sure? Unsaved changes will be lost.")) {
+                // Switch Views
+                document.getElementById('editor-ui').style.display = 'none';
+                document.getElementById('setup-screen').style.display = 'flex';
+                // Reset State
+                resetSetup(); 
+            }
+        }
+
+        function resetSetup() {
+            // Reset UI to default state
+            document.getElementById('manual-setup-group').style.display = 'flex';
+            document.getElementById('file-status').style.display = 'none';
+            document.getElementById('upload-hint').style.display = 'block';
+            
+            // Clear inputs and state
+            document.getElementById('file-upload').value = '';
+            document.getElementById('prog-name').value = '';
+            document.getElementById('prog-years').value = 4;
+            document.getElementById('sem-type').value = 3;
+            
+            curriculum = { programName: "", terms: [] };
+        }
+
+        // --- Render Logic ---
+
+        function setupYearSelect() {
+            const sel = document.getElementById('year-select');
+            sel.innerHTML = '';
+            for(let i=1; i<=config.years; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = `Year ${i}`;
+                sel.appendChild(opt);
+            }
+        }
+
+        function renderCurrentYear() {
+            const year = document.getElementById('year-select').value;
+            const container = document.getElementById('terms-container');
+            container.innerHTML = '';
+
+            // Filter terms belonging to this year
+            const yearTerms = curriculum.terms.filter(t => t.id.startsWith(`${year}-`));
+
+            yearTerms.forEach(term => {
+                const termDiv = document.createElement('div');
+                termDiv.className = 'term-container';
+                
+                // Header
+                termDiv.innerHTML = `<div class="term-header"><span>${term.name}</span> <span>${term.subjects.length} Subj</span></div>`;
+                
+                // Subjects List
+                term.subjects.forEach((sub, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'subject-card';
+                    
+                    let diffColor = '#fff';
+                    if(sub.diff === 'Easy') diffColor = 'var(--diff-easy)';
+                    if(sub.diff === 'Medium') diffColor = 'var(--diff-med)';
+                    if(sub.diff === 'Hard') diffColor = 'var(--diff-hard)';
+
+                    const prereqText = sub.prereq.length > 0 ? `Prereq: ${sub.prereq.join(', ')}` : 'No Prereq';
+
+                    card.innerHTML = `
+                        <div class="delete-sbj" onclick="deleteSubject('${term.id}', ${idx})">&times;</div>
+                        <div class="sbj-top">
+                            <span class="sbj-code">${sub.code}</span>
+                            <span class="sbj-type ${sub.type === 'Major' ? 'type-major' : 'type-minor'}">${sub.type}</span>
+                        </div>
+                        <div class="sbj-title">${sub.title}</div>
+                        <div class="sbj-details">
+                            <span><span class="diff-dot" style="background:${diffColor}"></span>${sub.diff}</span>
+                            <span>| ${prereqText}</span>
+                        </div>
+                        <div style="font-size:0.7rem; color:#666; margin-top:4px;">${sub.info}</div>
+                    `;
+                    termDiv.appendChild(card);
+                });
+
+                // Add Button
+                const addBtn = document.createElement('div');
+                addBtn.className = 'add-card-btn';
+                addBtn.innerText = '+';
+                addBtn.onclick = () => openAddModal(term.id);
+                termDiv.appendChild(addBtn);
+
+                container.appendChild(termDiv);
+            });
+        }
+
+        // --- Subject Management ---
+
+        function openAddModal(termId) {
+            document.getElementById('current-term-id').value = termId;
+            
+            // Clear inputs
+            document.getElementById('new-code').value = '';
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-info').value = '';
+            document.getElementById('new-type').value = 'Major';
+            document.getElementById('new-diff').value = 'Medium';
+            
+            // Reset Prereqs
+            tempPrereqs = [];
+            updatePrereqDisplay();
+
+            document.getElementById('add-modal').style.display = 'flex';
+        }
+
+        function openPrereqModal() {
+            const list = document.getElementById('prereq-list');
+            list.innerHTML = '';
+
+            // Get ALL subjects from the curriculum so far
+            let allSubjects = [];
+            curriculum.terms.forEach(t => {
+                t.subjects.forEach(s => {
+                    allSubjects.push({ code: s.code, title: s.title });
+                });
+            });
+
+            if(allSubjects.length === 0) {
+                list.innerHTML = '<div style="grid-column: span 2; text-align:center; color:#777; padding:1rem;">No other subjects created yet.</div>';
+            }
+
+            allSubjects.forEach(sub => {
+                const item = document.createElement('div');
+                
+                const index = tempPrereqs.indexOf(sub.code);
+                const isSelected = index > -1;
+
+                item.className = `prereq-item ${isSelected ? 'selected' : ''}`;
+                item.onclick = () => togglePrereq(sub.code, item);
+
+                const badge = isSelected ? `<span class="order-badge">${index + 1}</span>` : '';
+
+                item.innerHTML = `
+                    <span><strong>${sub.code}</strong> - ${sub.title}</span>
+                    ${badge}
+                `;
+                list.appendChild(item);
+            });
+
+            document.getElementById('prereq-modal').style.display = 'flex';
+        }
+
+        function togglePrereq(code, element) {
+            const idx = tempPrereqs.indexOf(code);
+            if (idx > -1) {
+                tempPrereqs.splice(idx, 1);
+            } else {
+                tempPrereqs.push(code);
+            }
+            openPrereqModal();
+            updatePrereqDisplay();
+        }
+
+        function updatePrereqDisplay() {
+            document.getElementById('prereq-count').innerText = `${tempPrereqs.length} Selected`;
+            document.getElementById('selected-prereq-display').innerText = tempPrereqs.join(' → ');
+        }
+
+        function saveSubject() {
+            const termId = document.getElementById('current-term-id').value;
+            const code = document.getElementById('new-code').value;
+            const title = document.getElementById('new-title').value;
+            
+            if(!code || !title) {
+                alert("Code and Title are required.");
+                return;
+            }
+
+            const newSubject = {
+                code: code,
+                title: title,
+                type: document.getElementById('new-type').value,
+                diff: document.getElementById('new-diff').value,
+                info: document.getElementById('new-info').value,
+                prereq: [...tempPrereqs] 
+            };
+
+            const term = curriculum.terms.find(t => t.id === termId);
+            if(term) {
+                term.subjects.push(newSubject);
+            }
+
+            closeModal('add-modal');
+            renderCurrentYear();
+        }
+
+        function deleteSubject(termId, index) {
+            if(!confirm("Remove this subject?")) return;
+            const term = curriculum.terms.find(t => t.id === termId);
+            if(term) {
+                term.subjects.splice(index, 1);
+                renderCurrentYear();
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // --- Export ---
+
+        function downloadJSON() {
+            const fileName = curriculum.programName.replace(/[^a-z0-9]/gi, '_').toLowerCase() + ".json";
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(curriculum, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", fileName);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function toggleAbout() {
+            const m = document.getElementById('about-modal');
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+    </script>
+</body>
+</html>
